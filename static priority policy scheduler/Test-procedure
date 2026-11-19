@@ -1,0 +1,4 @@
+Méthode de test pour montrer la famine CPU : 
+Commente wait(4); dans task3 (elle reste en priorité 1).
+S2 allume/éteint D1, mais S1 ne fait plus rien sur D3.
+task3 ne se suspend jamais : sa case readyTasks[1] n'est jamais NULL. À chaque tick, le scheduler() parcourt readyTasks depuis l'indice 0 et réélit toujours task3. Elle monopolise 100 % du CPU : task1 et task2 (priorités 3 et 2) sont en famine.
