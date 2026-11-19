@@ -14,8 +14,8 @@ unsigned char indexTask;
 static task *readyTasks[NB_TASKS] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /***************************************************************/
-/*******   task de fond : nécessaire lorsqu'aucune task   ******/
-/*******                est activée                       ******/
+/*******   task de fond : nÃ©cessaire lorsqu'aucune task   ******/
+/*******                est activÃ©e                       ******/
 /***************************************************************/
 static stack background_task_stk[STACK_SIZE];
 static task des_background_task;
@@ -68,27 +68,27 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 	scheduler();
 	UPDATE_SP();
 	RESTORE_CONTEXT();
-	START(); // START() exécute déjà reti()
+	START(); // START() exÃ©cute dÃ©jÃ  reti()
 }
 
 
 //////////////////// primitives of the kernel /////////////////////////////////
 void create(void (*f)(void), char prio, stack *stack_bottom, task *newTask){
-	// renseigner le descripteur de tâche
+	// renseigner le descripteur de tÃ¢che
 	newTask->traitement = f;
 	newTask->rank_prio = prio;
 	newTask->counter = 0;
 	newTask->theNextInTheQueue = NULL;
 
-	// insertion dans la liste chaînée (utilisée par operateCounters)
+	// insertion dans la liste chaÃ®nÃ©e (utilisÃ©e par operateCounters)
 	newTask->theNext = head;
 	head = newTask;
 
 	// initialisation de la pile pour le premier RESTORE_CONTEXT() + START()
-	*(stack_bottom + 0) = (unsigned short int)f & 0xFF;  // adr de la tâche low
-	*(stack_bottom - 1) = (unsigned short int)f >> 8;    // adr de la tâche high
+	*(stack_bottom + 0) = (unsigned short int)f & 0xFF;  // adr de la tÃ¢che low
+	*(stack_bottom - 1) = (unsigned short int)f >> 8;    // adr de la tÃ¢che high
 	*(stack_bottom - 3) = 0x00;                          // SREG initial
-	*(stack_bottom - 4) = 0x00;                          // r1 (__zero_reg__ à 0)
+	*(stack_bottom - 4) = 0x00;                          // r1 (__zero_reg__ Ã  0)
 
 	newTask->addr_stack = stack_bottom - CONTEXT_SIZE;
 	newTask->state = READY;
@@ -131,7 +131,7 @@ void scheduler(void){
 void startKernel(void){
 	CRITICAL_BEGINNING();
 	create(background_task, NB_TASKS - 1, &background_task_stk[STACK_SIZE-1], &des_background_task);
-	runningTask = &des_background_task; // lance background_task qui initialise le timer puis est préemptée au 1er tick
+	runningTask = &des_background_task; // lance background_task qui initialise le timer puis est prÃ©emptÃ©e au 1er tick
 	UPDATE_SP();
 	RESTORE_CONTEXT();
 	START();
@@ -161,7 +161,7 @@ void wait(unsigned int quantaNumber){
 
 /************************************************************************************/
 /*                                                                                  */
-/*                    services associés la gestion des semaphores                   */
+/*                    services associÃ©s la gestion des semaphores                   */
 /*                                                                                  */
 /************************************************************************************/
 
@@ -247,7 +247,7 @@ void *MB_Get(mailBox *MB){
 }
 
 /******* appel du service MB_Consulter, retire le message, renvoie **********/
-/******* l adresse de la donnée à recupérer ************************/
+/******* l adresse de la donnÃ©e Ã  recupÃ©rer ************************/
 /* si il y a aucun message la primitive renvoie NULL ************************/
 void *MB_LookAt(mailBox *MB){
 	char *reponse = NULL;
