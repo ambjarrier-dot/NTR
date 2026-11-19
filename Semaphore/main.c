@@ -33,7 +33,7 @@ int main(void)
 	USART_Init(MYUBRR);
 	USART_MessageTransmit((unsigned char *)"HELLO\n\r");
 
-	// Initialisation du sÈmaphore de synchronisation ‡ 0 jeton
+	// Initialisation du s√©maphore de synchronisation √† 0 jeton
 	S_Initialise(&MySem, 0);
 
 	create(task1, 3, &task1_stk[STACK_SIZE-1], &des1);
@@ -45,17 +45,17 @@ int main(void)
 	}
 }
 
-// T‚che 1 : dÈtection d'un appui sur S1 (PC1) -> libËre le sÈmaphore
+// T√¢che 1 : d√©tection d'un appui sur S1 (PC1) -> lib√®re le s√©maphore
 void task1(void){
 	unsigned char flag = 1;
 	while(1){
-		// Bouton S1 appuyÈ (Ètat 0) et pas encore pris en compte
+		// Bouton S1 appuy√© (√©tat 0) et pas encore pris en compte
 		if (!GetBooleanValue(PINC, maskBit1) && (flag == 1)) {
 			S_Release(&MySem);
 			flag = 0;
 			wait(3); // anti-rebond de 30 ms
 		}
-		// Bouton S1 rel‚chÈ (Ètat 1) -> rÈarmement du flag
+		// Bouton S1 rel√¢ch√© (√©tat 1) -> r√©armement du flag
 		if (GetBooleanValue(PINC, maskBit1) && (flag == 0)) {
 			flag = 1;
 			wait(3); // anti-rebond de 30 ms
@@ -63,18 +63,18 @@ void task1(void){
 	}
 }
 
-// T‚che 2 : attend le sÈmaphore et complÈmente la LED D3 (PB5)
+// T√¢che 2 : attend le s√©maphore et compl√©mente la LED D3 (PB5)
 void task2(void){
 	while(1){
 		S_Pend(&MySem);
-		PINB = (1 << 5); // Ècriture d'un 1 dans PINB5 -> inverse PORTB5 atomiquement
+		PINB = (1 << 5); // √©criture d'un 1 dans PINB5 -> inverse PORTB5 atomiquement
 	}
 }
 
-// T‚che 3 (tÈmoin) : LED D1 (PB3) suit directement l'Ètat du bouton S2 (PC2)
+// T√¢che 3 (t√©moin) : LED D1 (PB3) suit directement l'√©tat du bouton S2 (PC2)
 void task3(void){
 	while(1){
 		PINB = (1 << 4); // inverse PORTB4 (LED D2)
-		wait(50);        // 50 * 10 ms = 500 ms par Ètat (pÈriode de 1 s)
+		wait(50);        // 50 * 10 ms = 500 ms par √©tat (p√©riode de 1 s)
 	}
 }
