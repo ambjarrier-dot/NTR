@@ -36,11 +36,11 @@ int main(void)
 	USART_Init(MYUBRR);
 	USART_MessageTransmit((unsigned char *)"HELLO\n\r");
 
-	// Initialisation du sÈmaphore de synchronisation ‡ 0 jeton
+	// Initialisation du s√©maphore de synchronisation √† 0 jeton
 	S_Initialise(&MySem, 0);
 
-	// PrioritÈs uniques entre 0 et 6 (7 est rÈservÈ ‡ background_task)
-	// Plus le chiffre est petit, plus la prioritÈ est ÈlevÈe
+	// Priorit√©s uniques entre 0 et 6 (7 est r√©serv√© √† background_task)
+	// Plus le chiffre est petit, plus la priorit√© est √©lev√©e
 	create(task1, 3, &task1_stk[STACK_SIZE-1], &des1);
 	create(task2, 2, &task2_stk[STACK_SIZE-1], &des2);
 	create(task3, 1, &task3_stk[STACK_SIZE-1], &des3);
@@ -50,7 +50,7 @@ int main(void)
 	}
 }
 
-// T‚che 1 (prio 3) : dÈtection d'un appui sur S1 (PC1) -> libËre le sÈmaphore
+// T√¢che 1 (prio 3) : d√©tection d'un appui sur S1 (PC1) -> lib√®re le s√©maphore
 void task1(void){
 	unsigned char flag = 1;
 	while(1){
@@ -65,7 +65,7 @@ void task1(void){
 	}
 }
 
-// T‚che 2 (prio 2) : attend le sÈmaphore et complÈmente la LED D3 (PB5)
+// T√¢che 2 (prio 2) : attend le s√©maphore et compl√©mente la LED D3 (PB5)
 void task2(void){
 	while(1){
 		S_Pend(&MySem);
@@ -73,11 +73,11 @@ void task2(void){
 	}
 }
 
-// T‚che 3 (prio 1 - la plus haute) : LED D1 (PB3) suit l'Ètat du bouton S2 (PC2)
+// T√¢che 3 (prio 1 - la plus haute) : LED D1 (PB3) suit l'√©tat du bouton S2 (PC2)
 void task3(void){
 	while(1){
-		if (GetBooleanValue(PINC, maskBit2)) SetPORTBPin3();   // S2 rel‚chÈ -> D1 Èteinte
-		else                                 ClearPORTBPin3(); // S2 appuyÈ  -> D1 allumÈe
+		if (GetBooleanValue(PINC, maskBit2)) SetPORTBPin3();   // S2 rel√¢ch√© -> D1 √©teinte
+		else                                 ClearPORTBPin3(); // S2 appuy√©  -> D1 allum√©e
 		wait(4); 
 	}
 }
