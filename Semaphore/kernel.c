@@ -15,8 +15,8 @@ char indexTask;
 static task *readyTasks[NB_TASKS] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 
 /***************************************************************/
-/*******   task de fond : nÈcessaire lorsqu'aucune task   ******/
-/*******                est activÈe                       ******/
+/*******   task de fond : n√©cessaire lorsqu'aucune task   ******/
+/*******                est activ√©e                       ******/
 /***************************************************************/
 static stack background_task_stk[STACK_SIZE];
 static task des_background_task;
@@ -72,7 +72,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 	scheduler();
 	UPDATE_SP();
 	RESTORE_CONTEXT();
-	START(); // START() exÈcute dÈj‡ reti()
+	START(); // START() ex√©cute d√©j√† reti()
 }
 
 
@@ -84,7 +84,7 @@ void create(void (*f)(void), char prio, stack *stack_bottom, task *newTask){
 	newTask->counter = 0;
 	newTask->theNextInTheQueue = NULL;
 
-	// la nouvelle tache est insÈrÈe en tÍte de liste chaÓnÈe
+	// la nouvelle tache est ins√©r√©e en t√™te de liste cha√Æn√©e
 	newTask->theNext = head;
 	head = newTask;
 
@@ -92,7 +92,7 @@ void create(void (*f)(void), char prio, stack *stack_bottom, task *newTask){
 	*(stack_bottom + 0) = (unsigned short int)f & 0xFF;  // adr de la tache low
 	*(stack_bottom - 1) = (unsigned short int)f >> 8;    // adr de la tache high
 	*(stack_bottom - 3) = 0x00;                          // SREG initial
-	*(stack_bottom - 4) = 0x00;                          // r1 (__zero_reg__ ‡ 0)
+	*(stack_bottom - 4) = 0x00;                          // r1 (__zero_reg__ √† 0)
 
 	newTask->addr_stack = stack_bottom - CONTEXT_SIZE;
 	newTask->state = READY;
@@ -115,7 +115,7 @@ void startKernel(void){
 	runningTask = head;  // pointe sur background_task, qui lancera init_quantum()
 	UPDATE_SP();
 	RESTORE_CONTEXT();
-	START();             // exÈcute reti() et lance background_task
+	START();             // ex√©cute reti() et lance background_task
 }
 
 void scheduler(void){
@@ -148,14 +148,14 @@ void wait(unsigned int quantaNumber){
 	if (quantaNumber == 0) return;
 	CRITICAL_BEGINNING();                 // 1. entrer en zone critique
 	runningTask->counter = quantaNumber;  // 2. remplir le champ counter
-	runningTask->state   = WAITING;       // 3. Ètat WAITING
-	switchTask();                         // 4. changer de t‚che
-	CRITICAL_END();                       // exÈcutÈ quand la t‚che est rÈveillÈe
+	runningTask->state   = WAITING;       // 3. √©tat WAITING
+	switchTask();                         // 4. changer de t√¢che
+	CRITICAL_END();                       // ex√©cut√© quand la t√¢che est r√©veill√©e
 }
 
 /************************************************************************************/
 /*                                                                                  */
-/*                    services associÈs la gestion des semaphores                   */
+/*                    services associ√©s la gestion des semaphores                   */
 /*                                                                                  */
 /************************************************************************************/
 
@@ -237,7 +237,7 @@ void *MB_Get(mailBox *MB){
 }
 
 /******* appel du service MB_Consulter, retire le message, renvoie **********/
-/******* l adresse de la donnÈe ‡ recupÈrer ************************/
+/******* l adresse de la donn√©e √† recup√©rer ************************/
 /* si il y a aucun message la primitive renvoie NULL ************************/
 void *MB_LookAt(mailBox *MB){
 	char *reponse = NULL;
