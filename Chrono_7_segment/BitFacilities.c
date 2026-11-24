@@ -22,9 +22,9 @@ signed char dotPos      = -1;
 void initOutPutInput(void) {
 	DDRB  |= 0x39; // PB3, PB4, PB5 (LEDs D1-D3) et PB0 (dataPin 7-segments) en sortie
 	DDRD  |= 0x90; // PD4 (latchPin) et PD7 (clockPin) en sortie
-	DDRC  &= 0xF0; // PC1, PC2, PC3 (boutons S1-S3) et PC0 (ADC0) en entrée
+	DDRC  &= 0xF0; // PC1, PC2, PC3 (boutons S1-S3) et PC0 (ADC0) en entrÃ©e
 
-	PORTB |= 0x38; // LEDs D1-D3 éteintes au démarrage
+	PORTB |= 0x38; // LEDs D1-D3 Ã©teintes au dÃ©marrage
 }
 
 void shiftOut(uint8_t command) {
@@ -44,14 +44,14 @@ void display(void) {
 	for (signed char i = 0; i <= 3; i++) {
 		unsigned char segments = Dis_table[disbuff[i]];
 
-		// Allume le point décimal (bit 7 à 0) sur le digit choisi
+		// Allume le point dÃ©cimal (bit 7 Ã  0) sur le digit choisi
 		if (i == dotPos) {
 			segments &= 0x7F;
 		}
 
 		ClearlatchPin();
 		shiftOut(segments);    // Envoie le motif des segments du chiffre
-		shiftOut(Dis_buf[i]);  // Sélectionne le digit actif (0 à 3)
+		shiftOut(Dis_buf[i]);  // SÃ©lectionne le digit actif (0 Ã  3)
 		SetlatchPin();
 		_delay_ms(2);          // 2 ms par digit => 8 ms par image (~125 Hz, sans scintillement)
 	}
