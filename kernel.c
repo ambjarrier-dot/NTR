@@ -1,0 +1,216 @@
+#include "../include/kernel.h"
+
+
+static task *runningTask;
+static task *pt_operate;
+static task *head = NULL;
+
+
+// index of the task to be run
+char indexTask;
+
+// list of ready tasks: each element of the table points to the descriptor
+// associated with the task.
+// The element with the lowest index has the highest priority
+static task *readyTasks[NB_TASKS] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+
+/***************************************************************/
+/*******   task de fond : nécessaire lorsqu'aucune task   ******/
+/*******                est activée                       ******/
+/***************************************************************/
+static stack background_task_stk[STACK_SIZE];
+static task des_background_task;
+
+static void background_task(void){
+	init_quantum();
+	ENABLE_IT();
+
+	while(1){}
+}
+
+
+/////////////////////////// mechanism of preemption ///////////////////////////////
+
+ISR(TIMER1_COMPA_vect, ISR_NAKED);
+
+void init_quantum(void){
+	// Initialise Timer 1 to trigger periodical interrupt
+	// (WGM13, WGM12, WGM11, WGM10) must be set to (0,1,0,0) -> mode CTC
+	TCCR1A = 0;      // WGM11, WGM10 = 0,0
+	TCCR1B = 0x0C;   // prescaler = 256, WGM13, WGM12 = 0,1
+	TIMSK1 = 2;      // Timer/Counter1, Output Compare A Match Interrupt Enable
+	TCNT1 = 0;
+	OCR1A = QUANTUM;
+	ENABLE_IT();     // enabling interrupts
+}
+
+static void operateCounters(void){
+	task *t = head;
+	while (t != NULL) {
+		if (t->counter != 0) {
+			t->counter--;
+			if (t->counter == 0) {
+				t->state = READY;
+			}
+		}
+		t = t->theNext;
+	}
+}
+
+ISR(TIMER1_COMPA_vect, ISR_NAKED)
+{
+	SAVE_CONTEXT();
+	RETRIEVE_SP();
+	/*************************************************************/
+	operateCounters();
+	scheduler();
+	UPDATE_SP();
+	RESTORE_CONTEXT();
+	START(); // START() exécute déjà reti()
+}
+
+
+//////////////////// primitives of the kernel /////////////////////////////////
+void create(void (*f)(void), char prio, stack *stack_bottom, task *newTask){
+	// renseigner le descripteur de tache
+	newTask->traitement = f;
+	newTask->rank_prio = prio;
+	newTask->counter = 0;
+	newTask->theNextInTheQueue = NULL;
+
+	// la nouvelle tache est insérée en tête de liste chaînée
+	newTask->theNext = head;
+	head = newTask;
+
+	// initialisation de la pile pour le premier RESTORE_CONTEXT() + START()
+	*(stack_bottom + 0) = (unsigned short int)f & 0xFF;  // adr de la tache low
+	*(stack_bottom - 1) = (unsigned short int)f >> 8;    // adr de la tache high
+	*(stack_bottom - 3) = 0x00;                          // SREG initial
+	*(stack_bottom - 4) = 0x00;                          // r1 (__zero_reg__ à 0)
+
+	newTask->addr_stack = stack_bottom - CONTEXT_SIZE;
+	newTask->state = READY;
+}
+
+void switchTask(void){
+	SAVE_CONTEXT();
+	RETRIEVE_SP();
+	scheduler();
+	UPDATE_SP();
+	RESTORE_CONTEXT();
+	START();
+}
+
+//////////////////// starting the kernel and scheduling in the case of the Round Robin policy ///////////////////
+#ifdef SHARED
+void startKernel(void){
+	CRITICAL_BEGINNING();
+	create(background_task, 7, &background_task_stk[STACK_SIZE-1], &des_background_task);
+	runningTask = head;  // pointe sur background_task, qui lancera init_quantum()
+	UPDATE_SP();
+	RESTORE_CONTEXT();
+	START();             // exécute reti() et lance background_task
+}
+
+void scheduler(void){
+	do {
+		if (runningTask->theNext == NULL) runningTask = head;
+		else runningTask = runningTask->theNext;
+	} while (runningTask->state != READY);
+}
+#endif
+
+//////////////////// starting the kernel and scheduling in the case of the static priority policy ///////////////////
+#ifdef PRIORITY
+void startKernel(void){
+	create(background_task, 7, &background_task_stk[STACK_SIZE-1], &des_background_task);
+	init_quantum();
+	ENABLE_IT();
+	while(1);
+}
+
+void scheduler(void){
+	do {
+		if (runningTask->theNext == NULL) runningTask = head;
+		else runningTask = runningTask->theNext;
+	} while (runningTask->state != READY);
+}
+#endif
+
+////////////////// time management : delaying a task or suspending a task for a number of quanta ////////////////////////
+void wait(unsigned int quantaNumber){
+	if (quantaNumber == 0) return;
+	CRITICAL_BEGINNING();                 // 1. entrer en zone critique
+	runningTask->counter = quantaNumber;  // 2. remplir le champ counter
+	runningTask->state   = WAITING;       // 3. état WAITING
+	switchTask();                         // 4. changer de tâche
+	CRITICAL_END();                       // exécuté quand la tâche est réveillée
+}
+
+/************************************************************************************/
+/*                                                                                  */
+/*                    services associés la gestion des semaphores                   */
+/*                                                                                  */
+/************************************************************************************/
+
+/******* appel du service S_Initialiser **********/
+void S_Initialise(semaphore *S, char tokenNb){
+
+}
+
+/******* calling the primitive S_Pend, wait for a semaphore **********/
+void S_Pend(semaphore *S){
+	CRITICAL_BEGINNING();
+
+	CRITICAL_END();
+	// else continue
+}
+
+/******* calling the primitive S_Release, release the semaphore **********/
+void S_Release(semaphore *S){
+	CRITICAL_BEGINNING();
+
+	CRITICAL_END();
+}
+
+/************************************************************************************/
+/*                                                                                  */
+/*                  services associated to the management of the mailboxes          */
+/*                                                                                  */
+/************************************************************************************/
+
+/******* calling MB_Initialise **********/
+void MB_Initialise(mailBox *MB){
+
+}
+
+/******* calling MB_Send ***************************/
+void MB_Send(mailBox *MB, void *donnees){
+	CRITICAL_BEGINNING();
+
+	CRITICAL_END();
+}
+
+/******* Calling the MB_Get, return **********/
+/******* the address of the data to collect ************************/
+/*** if there is no message, the RT Kernel suspends the task running **********/
+void *MB_Get(mailBox *MB){
+	void *response;
+
+	response = MB->message;
+	MB->message = NULL;
+	return response;
+	CRITICAL_END();
+
+	// sinon continuer
+}
+
+/******* appel du service MB_Consulter, retire le message, renvoie **********/
+/******* l adresse de la donnée à recupérer ************************/
+/* si il y a aucun message la primitive renvoie NULL ************************/
+void *MB_LookAt(mailBox *MB){
+	char *reponse = NULL;
+
+	return reponse;
+	CRITICAL_END();
+}
