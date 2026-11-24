@@ -12,12 +12,12 @@
 void InitADC0(void);
 unsigned int ADC_ReadUint10(void);
 
-/* Prototypes des 3 t‚ches */
+/* Prototypes des 3 t√¢ches */
 void taskTime(void);
 void taskTemp(void);
 void taskDisplay(void);
 
-/* Descripteurs et piles des 3 t‚ches */
+/* Descripteurs et piles des 3 t√¢ches */
 task desTime;
 task desTemp;
 task desDisplay;
@@ -26,19 +26,19 @@ stack taskTime_stk[STACK_SIZE];
 stack taskTemp_stk[STACK_SIZE];
 stack taskDisplay_stk[STACK_SIZE];
 
-/* BoÓte aux lettres et buffers de messages */
+/* Bo√Æte aux lettres et buffers de messages */
 mailBox MymailBox;
 char strTime[8];
 char strTemp[8];
 
-/* Initialisation de l'ADC sur ADC0 (potentiomËtre A0 du shield) */
+/* Initialisation de l'ADC sur ADC0 (potentiom√®tre A0 du shield) */
 void InitADC0(void) {
-	ADMUX  = 0x40; // RÈfÈrence AVcc (5V), alignement ‡ droite, canal ADC0 (0x44 pour LM35 sur A4)
+	ADMUX  = 0x40; // R√©f√©rence AVcc (5V), alignement √† droite, canal ADC0 (0x44 pour LM35 sur A4)
 	ADCSRA = 0xC7; // ADEN=1, ADSC=1, prescaler=128
 	ADCSRB = 0x00;
 }
 
-/* Lecture 10 bits (0 ‡ 1023) de l'ADC */
+/* Lecture 10 bits (0 √† 1023) de l'ADC */
 unsigned int ADC_ReadUint10(void) {
 	ADCSRA |= 0x40;
 	while ((ADCSRA & 0x40) != 0) {}
@@ -50,7 +50,7 @@ int main(void) {
 	InitADC0();
 	MB_Initialise(&MymailBox);
 
-	// PrioritÈs statiques : 1 = Temps, 2 = TempÈrature/ADC, 3 = Affichage 7 segments
+	// Priorit√©s statiques : 1 = Temps, 2 = Temp√©rature/ADC, 3 = Affichage 7 segments
 	create(taskTime,    1, &taskTime_stk[STACK_SIZE - 1],    &desTime);
 	create(taskTemp,    2, &taskTemp_stk[STACK_SIZE - 1],    &desTemp);
 	create(taskDisplay, 3, &taskDisplay_stk[STACK_SIZE - 1], &desDisplay);
@@ -60,7 +60,7 @@ int main(void) {
 	}
 }
 
-/* T‚che 1 (PrioritÈ 1) : gestion du temps au 1/10 de seconde */
+/* T√¢che 1 (Priorit√© 1) : gestion du temps au 1/10 de seconde */
 void taskTime(void) {
 	unsigned char tenthSec = 0;
 	unsigned char sec = 0;
@@ -82,13 +82,13 @@ void taskTime(void) {
 			}
 		}
 
-		// Envoie le temps uniquement si S2 (PC2) n'est pas appuyÈ
+		// Envoie le temps uniquement si S2 (PC2) n'est pas appuy√©
 		if (GetBooleanValue(PINC, maskBit2)) {
 			if (!GetBooleanValue(PINC, maskBit1)) {
-				// S1 appuyÈ : secondes et dixiËmes (ex: "58.01")
+				// S1 appuy√© : secondes et dixi√®mes (ex: "58.01")
 				timeToString(sec, tenthSec, tenthSecAndSeconds, strTime);
 			} else {
-				// Aucun bouton appuyÈ : minutes et secondes (ex: "00:25")
+				// Aucun bouton appuy√© : minutes et secondes (ex: "00:25")
 				timeToString(min, sec, minutesAndSeconds, strTime);
 			}
 			MB_Send(&MymailBox, strTime);
@@ -96,7 +96,7 @@ void taskTime(void) {
 	}
 }
 
-/* T‚che 2 (PrioritÈ 2) : mesure analogique si S2 (PC2) est appuyÈ */
+/* T√¢che 2 (Priorit√© 2) : mesure analogique si S2 (PC2) est appuy√© */
 void taskTemp(void) {
 	unsigned int adcVal;
 
@@ -110,7 +110,7 @@ void taskTemp(void) {
 	}
 }
 
-/* T‚che 3 (PrioritÈ 3) : dÈcode les messages et multiplexe l'afficheur 7 segments */
+/* T√¢che 3 (Priorit√© 3) : d√©code les messages et multiplexe l'afficheur 7 segments */
 void taskDisplay(void) {
 	char *msg;
 
@@ -120,19 +120,19 @@ void taskDisplay(void) {
 
 		if (msg != NULL) {
 			if (msg[2] == ':' || msg[2] == '.') {
-				// Format temps : "MM:SS" ou "SS.0D" -> on saute le sÈparateur en msg[2]
+				// Format temps : "MM:SS" ou "SS.0D" -> on saute le s√©parateur en msg[2]
 				disbuff[0] = (unsigned char)(msg[0] - '0');
 				disbuff[1] = (unsigned char)(msg[1] - '0');
 				disbuff[2] = (unsigned char)(msg[3] - '0');
 				disbuff[3] = (unsigned char)(msg[4] - '0');
-				dotPos = 1; // Point dÈcimal allumÈ sur le 2e digit (ex: 00.25 ou 58.01)
+				dotPos = 1; // Point d√©cimal allum√© sur le 2e digit (ex: 00.25 ou 58.01)
 			} else {
 				// Format mesure 4 chiffres : "0554 "
 				disbuff[0] = (unsigned char)(msg[0] - '0');
 				disbuff[1] = (unsigned char)(msg[1] - '0');
 				disbuff[2] = (unsigned char)(msg[2] - '0');
 				disbuff[3] = (unsigned char)(msg[3] - '0');
-				dotPos = -1; // Pas de point dÈcimal
+				dotPos = -1; // Pas de point d√©cimal
 			}
 		}
 
